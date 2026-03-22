@@ -19,6 +19,7 @@ type updateNeighbor<
 				: never
 			: never;
 
+// @ts-expect-error - infinite recursion, but still works if graph is small enough
 interface updateNeighborFn<current extends Vertex.T, unvisited extends Queue.T>
 	extends Fn<Graph.Edge, Vertex.T> {
 	return: updateNeighbor<

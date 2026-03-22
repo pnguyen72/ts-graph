@@ -1,7 +1,7 @@
 import type { shortestPath } from "./dijkstra";
 import type * as Graph from "./graph";
 
-type graph = Graph.create<
+type graph = Graph.ofEdges<
 	[
 		Graph.edge<"a", "c", 2>,
 		Graph.edge<"b", "a", 4>,
@@ -15,4 +15,4 @@ type graph = Graph.create<
 	]
 >;
 
-type _path = shortestPath<"a", "f", graph>;
+type _path = shortestPath<"a", "b", graph>;

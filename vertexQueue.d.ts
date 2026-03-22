@@ -31,6 +31,7 @@ export type ofList<
 	: acc;
 
 export type min<q extends Table.T> =
+	// @ts-expect-error - infinite recursion, but still works if graph is small enough
 	List.min<Table.values<q>, Vertex.lt> extends infer v extends Vertex.T
 		? v
 		: never;

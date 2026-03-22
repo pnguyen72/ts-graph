@@ -22,14 +22,15 @@ type addEdge<e extends Edge, g extends T> = (
 		: g
 	: never;
 
-export type create<
+export type ofEdges<
 	edges extends Edge[],
 	g extends T = Table.empty,
 > = edges extends [infer e extends Edge, ...infer rest extends Edge[]]
-	? create<rest, addEdge<e, g>>
+	? ofEdges<rest, addEdge<e, g>>
 	: g;
 
-export type vertices<g extends T> = Table.keys<g>;
+export type vertices<g extends T> =
+	Table.keys<g> extends infer names extends string[] ? names : never;
 
 export type neighbors<v extends string, g extends T> =
 	Table.get<v, g> extends infer edges extends Edge[] ? edges : never;
