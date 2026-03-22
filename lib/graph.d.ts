@@ -33,4 +33,6 @@ export namespace Graph {
 
 	export type neighbors<v extends string, g extends Graph> =
 		Table.get<v, g> extends infer edges extends Edge[] ? edges : unknown;
+
+	export type mem<v extends string, g extends Graph> = Table.mem<v, g>;
 }

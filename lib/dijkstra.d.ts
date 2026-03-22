@@ -13,11 +13,17 @@ export type shortestPath<
 	unvisited extends Queue = Queue.ofList<
 		List.map<Node.createFn<inf>, Graph.vertices<g>>
 	>,
-> = src extends des
-	? { path: [src]; dist: 0 }
-	: search<des, g, srcVertex, visited, unvisited>;
+> =
+	Graph.mem<src, g> extends false
+		? `Vertex ${src} does not exist`
+		: Graph.mem<des, g> extends false
+			? `Vertex ${des} does not exist`
+			: src extends des
+				? { path: [src]; dist: 0 }
+				: search<src, des, g, srcVertex, visited, unvisited>;
 
 type search<
+	src extends string,
 	des extends string,
 	g extends Graph,
 	current extends Node,
@@ -46,11 +52,11 @@ type search<
 		? next["name"] extends des
 			? Node.isRelaxed<next> extends true
 				? Node.getPath<next>
-				: "not connected"
-			: search<des, g, next, newVisited, updatedUnvisited>
+				: `Vertices ${src} and ${des} are not connected`
+			: search<src, des, g, next, newVisited, updatedUnvisited>
 		: Queue.get<des, newVisited> extends infer desVertex extends Node
 			? Node.getPath<desVertex>
-			: unknown;
+			: unknown; // should be unreachable
 
 // @ts-ignore - infinite recursion, but still works if graph is small enough
 interface updateNeighborFn<current extends Node, unvisited extends Queue>
