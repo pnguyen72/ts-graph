@@ -15,4 +15,4 @@ type graph = Graph.ofEdges<
 	]
 >;
 
-type _p = shortestPath<"a", "b", graph>;
+type _path = shortestPath<"a", "f", graph>;
