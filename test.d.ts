@@ -1,17 +1,17 @@
 import type { shortestPath } from "./lib/dijkstra";
-import type * as Graph from "./lib/graph";
+import type { Edge, Graph } from "./lib/graph";
 
-type graph = Graph.ofEdges<
+type graph = Graph.of<
 	[
-		Graph.edge<"a", "c", 2>,
-		Graph.edge<"b", "a", 4>,
-		Graph.edge<"c", "b", 6>,
-		Graph.edge<"c", "d", 5>,
-		Graph.edge<"c", "e", 2>,
-		Graph.edge<"d", "e", 3>,
-		Graph.edge<"e", "b", 2>,
-		Graph.edge<"e", "f", 1>,
-		Graph.edge<"f", "d", 2>,
+		Edge.of<"a", "c", 2>,
+		Edge.of<"b", "a", 4>,
+		Edge.of<"c", "b", 6>,
+		Edge.of<"c", "d", 5>,
+		Edge.of<"c", "e", 2>,
+		Edge.of<"d", "e", 3>,
+		Edge.of<"e", "b", 2>,
+		Edge.of<"e", "f", 1>,
+		Edge.of<"f", "d", 2>,
 	]
 >;
 

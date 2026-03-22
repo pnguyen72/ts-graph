@@ -3,4 +3,6 @@ export interface Fn<arg = unknown, ret = unknown> {
 	return: ret;
 }
 
-export type call<f extends Fn, arg> = (f & { arg: arg })["return"];
+export namespace Fn {
+	export type call<f extends Fn, arg> = (f & { arg: arg })["return"];
+}
