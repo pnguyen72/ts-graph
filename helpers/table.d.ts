@@ -7,10 +7,10 @@ export type insert<k extends string | number, v, t extends T> = Omit<t, k> &
 	Record<k, v>;
 
 export type get<k extends string | number, t extends T> =
-	t extends Record<k, infer v> ? v : never;
+	t extends Record<k, infer v> ? v : unknown;
 
 export type mem<k extends string | number, t extends T> =
-	get<k, t> extends never ? false : true;
+	t extends Record<k, infer _> ? true : false;
 
 export type remove<k extends string | number, t extends T> = Omit<t, k>;
 

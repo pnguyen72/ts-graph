@@ -4,8 +4,8 @@ export type foldRight<
 	f extends Fn<[unknown, unknown]>,
 	arr extends unknown[],
 	acc,
-> = arr extends [infer head, ...infer tail]
-	? foldRight<f, tail, call<f, [head, acc]>>
+> = arr extends [...infer rest, infer last]
+	? foldRight<f, rest, call<f, [last, acc]>>
 	: acc;
 
 interface minFn<lt extends Fn<[unknown, unknown], boolean>>
@@ -15,7 +15,9 @@ interface minFn<lt extends Fn<[unknown, unknown], boolean>>
 export type min<
 	arr extends unknown[],
 	lt extends Fn<[unknown, unknown], boolean>,
-> = foldRight<minFn<lt>, arr, never>;
+> = arr extends [...infer rest, infer last]
+	? foldRight<minFn<lt>, rest, last>
+	: unknown;
 
 export type filterMap<f extends Fn, arr extends unknown[]> = arr extends [
 	infer head,

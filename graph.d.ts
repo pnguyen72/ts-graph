@@ -11,11 +11,9 @@ export type edge<
 export type T = Table.T;
 
 type addEdge<e extends Edge, g extends T> = (
-	Table.mem<e["from"], g> extends false
-		? Table.insert<e["from"], [e], g>
-		: Table.get<e["from"], g> extends infer edgesFrom extends Edge[]
-			? Table.insert<e["from"], [...edgesFrom, e], g>
-			: never
+	Table.get<e["from"], g> extends infer edges extends Edge[]
+		? Table.insert<e["from"], [...edges, e], g>
+		: Table.insert<e["from"], [e], g>
 ) extends infer g extends T
 	? Table.mem<e["to"], g> extends false
 		? Table.insert<e["to"], [], g>
@@ -30,7 +28,7 @@ export type ofEdges<
 	: g;
 
 export type vertices<g extends T> =
-	Table.keys<g> extends infer names extends string[] ? names : never;
+	Table.keys<g> extends infer names extends string[] ? names : [];
 
 export type neighbors<v extends string, g extends T> =
-	Table.get<v, g> extends infer edges extends Edge[] ? edges : never;
+	Table.get<v, g> extends infer edges extends Edge[] ? edges : unknown;

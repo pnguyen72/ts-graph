@@ -11,13 +11,13 @@ type updateNeighbor<
 	name extends string,
 	weight extends number,
 > =
-	Queue.get<name, unvisited> extends never
-		? never
-		: Queue.get<name, unvisited> extends infer neighbor extends Vertex.T
-			? lt<plus<current["dist"], weight>, neighbor["dist"]> extends true
-				? Vertex.create<name, plus<current["dist"], weight>, current>
+	Queue.get<name, unvisited> extends infer neighbor extends Vertex.T
+		? plus<current["dist"], weight> extends infer newDist extends number
+			? lt<newDist, neighbor["dist"]> extends true
+				? Vertex.create<name, newDist, current>
 				: never
-			: never;
+			: never
+		: never;
 
 // @ts-expect-error - infinite recursion, but still works if graph is small enough
 interface updateNeighborFn<current extends Vertex.T, unvisited extends Queue.T>
@@ -38,25 +38,30 @@ type search<
 	unvisited extends Queue.T,
 	newVisited extends Queue.T = Queue.update<current, visited>,
 	newUnvisited extends Queue.T = Queue.remove<current, unvisited>,
-	updatedNeighbors extends Vertex.T[] = List.filterMap<
-		updateNeighborFn<current, newUnvisited>,
-		Graph.neighbors<current["name"], g>
-	> extends infer neighbours extends Vertex.T[]
-		? neighbours
-		: never,
+	updatedNeighbors extends Vertex.T[] = Graph.neighbors<
+		current["name"],
+		g
+	> extends infer edges extends Graph.Edge[]
+		? List.filterMap<
+				updateNeighborFn<current, newUnvisited>,
+				edges
+			> extends infer neighbours extends Vertex.T[]
+			? neighbours
+			: []
+		: [],
 	updatedUnvisited extends Queue.T = List.foldRight<
 		Queue.updateFn,
 		updatedNeighbors,
 		newUnvisited
 	>,
 > =
-	Queue.min<updatedUnvisited> extends never
-		? Vertex.getPath<Queue.get<des, newVisited>>
-		: Queue.min<updatedUnvisited> extends infer next extends Vertex.T
-			? next["name"] extends des
-				? Vertex.getPath<next>
-				: search<des, g, next, newVisited, updatedUnvisited>
-			: never;
+	Queue.min<updatedUnvisited> extends infer next extends Vertex.T
+		? next["name"] extends des
+			? Vertex.getPath<next>
+			: search<des, g, next, newVisited, updatedUnvisited>
+		: Queue.get<des, newVisited> extends infer desVtx extends Vertex.T
+			? Vertex.getPath<desVtx>
+			: unknown;
 
 export type shortestPath<
 	src extends string,

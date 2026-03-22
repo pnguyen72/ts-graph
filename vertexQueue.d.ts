@@ -21,7 +21,7 @@ export type remove<v extends Vertex.T, q extends Table.T> = Table.remove<
 >;
 
 export type get<k extends string, q extends Table.T> =
-	Table.get<k, q> extends infer v extends Vertex.T ? v : never;
+	Table.get<k, q> extends infer v extends Vertex.T ? v : unknown;
 
 export type ofList<
 	vs extends Vertex.T[],
@@ -34,4 +34,4 @@ export type min<q extends Table.T> =
 	// @ts-expect-error - infinite recursion, but still works if graph is small enough
 	List.min<Table.values<q>, Vertex.lt> extends infer v extends Vertex.T
 		? v
-		: never;
+		: unknown;

@@ -3,11 +3,13 @@
  */
 
 export type toArray<u> =
-	pickOne<u> extends infer last
-		? Exclude<u, last> extends never
-			? [last]
-			: [...toArray<Exclude<u, last>>, last]
-		: never;
+	pickOne<u> extends never
+		? []
+		: pickOne<u> extends infer last
+			? Exclude<u, last> extends never
+				? [last]
+				: [...toArray<Exclude<u, last>>, last]
+			: never;
 
 type pickOne<T> = inferContra<inferContra<contra<contra<T>>>>;
 
