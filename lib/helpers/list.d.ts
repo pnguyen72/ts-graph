@@ -44,9 +44,7 @@ export namespace List {
 	export type ofUnion<u> = [u] extends [never]
 		? []
 		: pickOne<u> extends infer last
-			? Exclude<u, last> extends never
-				? [last]
-				: [...ofUnion<Exclude<u, last>>, last]
+			? [...ofUnion<Exclude<u, last>>, last]
 			: never;
 	type pickOne<T> = inferContra<inferContra<contra<contra<T>>>>;
 	type contra<T> = T extends T ? (arg: T) => void : never;
