@@ -57,7 +57,9 @@ type search<
 > =
 	Queue.min<updatedUnvisited> extends infer next extends Vertex.T
 		? next["name"] extends des
-			? Vertex.getPath<next>
+			? lt<next["dist"], inf> extends true
+				? Vertex.getPath<next>
+				: "not connected"
 			: search<des, g, next, newVisited, updatedUnvisited>
 		: Queue.get<des, newVisited> extends infer desVertex extends Vertex.T
 			? Vertex.getPath<desVertex>
