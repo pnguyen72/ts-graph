@@ -3,10 +3,10 @@ import type { Fn } from "./function.d.ts";
 export namespace List {
 	export type foldRight<
 		f extends Fn<[unknown, unknown]>,
-		arr extends unknown[],
+		l extends unknown[],
 		acc,
-	> = arr extends [...infer rest, infer last]
-		? foldRight<f, rest, Fn.call<f, [last, acc]>>
+	> = l extends [...infer head, infer tail]
+		? foldRight<f, head, Fn.call<f, [tail, acc]>>
 		: acc;
 
 	interface minFn<lt extends Fn<[unknown, unknown], boolean>>
@@ -16,13 +16,13 @@ export namespace List {
 			: this["arg"][1];
 	}
 	export type min<
-		arr extends unknown[],
+		l extends unknown[],
 		lt extends Fn<[unknown, unknown], boolean>,
-	> = arr extends [...infer rest, infer last]
-		? foldRight<minFn<lt>, rest, last>
+	> = l extends [...infer head, infer tail]
+		? foldRight<minFn<lt>, head, tail>
 		: unknown;
 
-	export type filterMap<f extends Fn, arr extends unknown[]> = arr extends [
+	export type filterMap<f extends Fn, l extends unknown[]> = l extends [
 		infer head,
 		...infer tail,
 	]
@@ -33,14 +33,14 @@ export namespace List {
 			: never
 		: [];
 
-	export type map<f extends Fn, arr extends unknown[]> = arr extends [
+	export type map<f extends Fn, l extends unknown[]> = l extends [
 		infer head,
 		...infer tail,
 	]
 		? [Fn.call<f, head>, ...map<f, tail>]
 		: [];
 
-	// https://github.com/hackle/blog-rust/blob/master/sample/typescript-union-to-tuple-array.ts
+	// https://github.com/hackle/blog-rust/blob/master/sample/typescript-union-to-tuple-lay.ts
 	export type ofUnion<u> = [u] extends [never]
 		? []
 		: pickOne<u> extends infer last

@@ -11,28 +11,28 @@ export namespace Edge {
 
 export type Graph = Table;
 export namespace Graph {
-	type addEdge<e extends Edge, g extends Graph> = (
-		Table.get<e["from"], g> extends infer edges extends Edge[]
-			? Table.insert<e["from"], [...edges, e], g>
-			: Table.insert<e["from"], [e], g>
-	) extends infer g extends Graph
-		? Table.mem<e["to"], g> extends false
-			? Table.insert<e["to"], [], g>
-			: g
+	type addEdge<e extends Edge, graph extends Graph> = (
+		neighbors<e["from"], graph> extends infer edges extends Edge[]
+			? Table.insert<e["from"], [...edges, e], graph>
+			: Table.insert<e["from"], [e], graph>
+	) extends infer graph extends Graph
+		? mem<e["to"], graph> extends false
+			? Table.insert<e["to"], [], graph>
+			: graph
 		: never;
 
 	export type of<
 		edges extends Edge[],
-		g extends Graph = Table.empty,
-	> = edges extends [infer e extends Edge, ...infer rest extends Edge[]]
-		? of<rest, addEdge<e, g>>
-		: g;
+		graph extends Graph = Table.empty,
+	> = edges extends [infer head extends Edge, ...infer tail extends Edge[]]
+		? of<tail, addEdge<head, graph>>
+		: graph;
 
-	export type vertices<g extends Graph> =
-		Table.keys<g> extends infer names extends string[] ? names : [];
+	export type vertices<graph extends Graph> =
+		Table.keys<graph> extends infer names extends string[] ? names : [];
 
-	export type neighbors<v extends string, g extends Graph> =
-		Table.get<v, g> extends infer edges extends Edge[] ? edges : unknown;
+	export type neighbors<v extends string, graph extends Graph> =
+		Table.get<v, graph> extends infer edges extends Edge[] ? edges : unknown;
 
-	export type mem<v extends string, g extends Graph> = Table.mem<v, g>;
+	export type mem<v extends string, graph extends Graph> = Table.mem<v, graph>;
 }

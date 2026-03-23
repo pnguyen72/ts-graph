@@ -82,4 +82,4 @@ type graph = Graph.of<
 	]
 >;
 
-type _ = shortestPath<"A", "Z", graph>;
+type _az = shortestPath<"A", "Z", graph>;

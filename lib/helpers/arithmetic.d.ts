@@ -7,7 +7,9 @@ type tupleOf<
 export type inf = 999;
 
 export type minus<a extends number, b extends number> =
-	tupleOf<a> extends [...tupleOf<b>, ...infer rest] ? rest["length"] : unknown;
+	tupleOf<a> extends [...tupleOf<b>, ...infer remaining]
+		? remaining["length"]
+		: unknown;
 
 export type plus<a extends number, b extends number> = [
 	...tupleOf<a>,

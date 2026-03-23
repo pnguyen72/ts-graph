@@ -7,59 +7,56 @@ import type { Table } from "./helpers/table";
 export type shortestPath<
 	src extends string,
 	des extends string,
-	g extends Graph,
+	graph extends Graph,
 	srcNode extends Node = Node.of<src, 0>,
-	visited extends Queue = Queue.empty,
-	unvisited extends Queue = Queue.ofList<
-		List.map<Node.ofDist<inf>, Graph.vertices<g>>
+	visited extends NodeTable = NodeTable.empty,
+	unvisited extends NodeTable = NodeTable.remove<
+		srcNode,
+		NodeTable.ofList<List.map<Node.ofDist<inf>, Graph.vertices<graph>>>
 	>,
 > =
-	Graph.mem<src, g> extends false
+	Graph.mem<src, graph> extends false
 		? `Vertex ${src} does not exist`
-		: Graph.mem<des, g> extends false
+		: Graph.mem<des, graph> extends false
 			? `Vertex ${des} does not exist`
 			: src extends des
 				? { path: src; dist: 0 }
-				: search<src, des, g, srcNode, visited, unvisited>;
+				: search<src, des, graph, srcNode, visited, unvisited>;
 
 type search<
 	src extends string,
 	des extends string,
-	g extends Graph,
+	graph extends Graph,
 	current extends Node,
-	visited extends Queue,
-	unvisited extends Queue,
-	newVisited extends Queue = Queue.update<current, visited>,
-	newUnvisited extends Queue = Queue.remove<current, unvisited>,
-	updatedNeighbors extends Node[] = Graph.neighbors<
+	visited extends NodeTable,
+	unvisited extends NodeTable,
+	newVisited extends NodeTable = NodeTable.add<current, visited>,
+	neighbors extends Node[] = Graph.neighbors<
 		current["name"],
-		g
+		graph
 	> extends infer edges extends Edge[]
 		? List.filterMap<
-				updateNeighborFn<current, newUnvisited>,
+				updateNeighborFn<current, unvisited>,
 				edges
 			> extends infer nodes extends Node[]
 			? nodes
-			: []
-		: [],
-	updatedUnvisited extends Queue = List.foldRight<
-		Queue.updateFn,
-		updatedNeighbors,
-		newUnvisited
-	>,
+			: never
+		: never,
 > =
-	Queue.min<updatedUnvisited> extends infer next extends Node
-		? Node.relaxed<next> extends true
-			? next["name"] extends des
+	NodeTable.removeMin<
+		List.foldRight<NodeTable.update, neighbors, unvisited>
+	> extends [infer next extends Node, infer newUnvisited extends NodeTable]
+		? Node.relaxed<next> extends false
+			? `Vertices ${src} and ${des} are not connected`
+			: next["name"] extends des
 				? Node.getPath<next>
-				: search<src, des, g, next, newVisited, updatedUnvisited>
-			: `Vertices ${src} and ${des} are not connected`
-		: Queue.get<des, newVisited> extends infer desNode extends Node
+				: search<src, des, graph, next, newVisited, newUnvisited>
+		: NodeTable.get<des, newVisited> extends infer desNode extends Node
 			? Node.getPath<desNode>
-			: unknown; // should be unreachable
+			: never;
 
 // @ts-ignore - infinite recursion, but still works if graph is small enough
-interface updateNeighborFn<current extends Node, unvisited extends Queue>
+interface updateNeighborFn<current extends Node, unvisited extends NodeTable>
 	extends Fn<Edge, Node> {
 	return: updateNeighbor<
 		current,
@@ -71,11 +68,11 @@ interface updateNeighborFn<current extends Node, unvisited extends Queue>
 
 type updateNeighbor<
 	current extends Node,
-	unvisited extends Queue,
+	unvisited extends NodeTable,
 	name extends string,
 	weight extends number,
 > =
-	Queue.get<name, unvisited> extends infer neighbor extends Node
+	NodeTable.get<name, unvisited> extends infer neighbor extends Node
 		? plus<current["dist"], weight> extends infer newDist extends number
 			? lt<newDist, neighbor["dist"]> extends true
 				? Node.of<name, newDist, current>
@@ -111,41 +108,43 @@ declare namespace Node {
 				: never
 			: never;
 
-	export type getPath<v extends Node> = { path: buildPath<v>; dist: v["dist"] };
+	export type getPath<node extends Node> = {
+		path: buildPath<node>;
+		dist: node["dist"];
+	};
 }
 
-type Queue = Table;
-declare namespace Queue {
+type NodeTable = Table;
+declare namespace NodeTable {
 	export type empty = Table.empty;
 
-	export type update<v extends Node, q extends Queue> = Table.insert<
-		v["name"],
-		v,
-		q
+	export type add<node extends Node, table extends NodeTable> = Table.insert<
+		node["name"],
+		node,
+		table
 	>;
 
-	export interface updateFn extends Fn<[Node, Table], Table> {
-		return: update<this["arg"][0], this["arg"][1]>;
+	export interface update extends Fn<[Node, NodeTable], NodeTable> {
+		return: add<this["arg"][0], this["arg"][1]>;
 	}
 
-	export type remove<v extends Node, q extends Queue> = Table.remove<
-		v["name"],
-		q
+	export type remove<node extends Node, table extends NodeTable> = Table.remove<
+		node["name"],
+		table
 	>;
 
-	export type get<k extends string, q extends Queue> =
-		Table.get<k, q> extends infer v extends Node ? v : unknown;
+	export type get<name extends string, table extends NodeTable> =
+		Table.get<name, table> extends infer node extends Node ? node : unknown;
 
-	export type ofList<
-		vs extends Node[],
-		acc extends Queue = Table.empty,
-	> = vs extends [infer v extends Node, ...infer rest extends Node[]]
-		? ofList<rest, update<v, acc>>
-		: acc;
+	export type ofList<nodes extends Node[]> = List.foldRight<
+		update,
+		nodes,
+		Table.empty
+	>;
 
-	export type min<q extends Queue> =
+	export type removeMin<table extends NodeTable> =
 		// @ts-ignore - infinite recursion, but still works if graph is small enough
-		List.min<Table.values<q>, Node.ltFn> extends infer v extends Node
-			? v
+		List.min<Table.values<table>, Node.ltFn> extends infer node extends Node
+			? [node, remove<node, table>]
 			: unknown;
 }
