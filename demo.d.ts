@@ -77,9 +77,7 @@ type graph = Graph.of<
 		Edge.of<"R", "D", 16>,
 		Edge.of<"R", "Q", 37>,
 		Edge.of<"S", "T", 18>,
-		Edge.of<"S", "U", 60>,
-		Edge.of<"S", "E", 13>,
 	]
 >;
 
-type _az = shortestPath<"A", "Z", graph>;
+type _ = shortestPath<"A", "W", graph>;

@@ -1,3 +1,4 @@
+import type { Fn } from "./helpers/function";
 import type { Table } from "./helpers/table";
 
 export type Edge = { from: string; to: string; weight: number };
@@ -12,7 +13,7 @@ export namespace Edge {
 export type Graph = Table;
 export namespace Graph {
 	type addEdge<e extends Edge, graph extends Graph> = (
-		neighbors<e["from"], graph> extends infer edges extends Edge[]
+		Fn.call<neighbors<e["from"]>, graph> extends infer edges extends Edge[]
 			? Table.insert<e["from"], [...edges, e], graph>
 			: Table.insert<e["from"], [e], graph>
 	) extends infer graph extends Graph
@@ -28,11 +29,18 @@ export namespace Graph {
 		? of<tail, addEdge<head, graph>>
 		: graph;
 
-	export type vertices<graph extends Graph> =
-		Table.keys<graph> extends infer names extends string[] ? names : [];
+	export interface vertices extends Fn<Graph, string[]> {
+		return: Table.keys<this["arg"]> extends infer names extends string[]
+			? names
+			: [];
+	}
 
-	export type neighbors<v extends string, graph extends Graph> =
-		Table.get<v, graph> extends infer edges extends Edge[] ? edges : unknown;
+	export interface neighbors<v extends string>
+		extends Fn<Graph, Edge[] | unknown> {
+		return: Table.get<v, this["arg"]> extends infer edges extends Edge[]
+			? edges
+			: unknown;
+	}
 
 	export type mem<v extends string, graph extends Graph> = Table.mem<v, graph>;
 }
