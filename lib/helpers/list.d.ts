@@ -12,16 +12,12 @@ export namespace List {
 		? foldLeftImpl<f, Fn.call<f, [acc, head]>, tail>
 		: acc;
 
-	export type min<
-		lt extends Fn<[unknown, unknown], boolean>,
-		l extends unknown[],
-	> = l extends [infer singleton]
-		? singleton
+	export type min<lt extends Fn, l extends unknown[]> = l extends [infer only]
+		? only
 		: l extends [infer first, infer second, ...infer rest]
 			? min<lt, [takeMin<lt, first, second>, ...rest]>
 			: unknown;
-	type takeMin<lt extends Fn<[unknown, unknown], boolean>, a, b> =
-		Fn.call<lt, [a, b]> extends true ? a : b;
+	type takeMin<lt extends Fn, a, b> = Fn.call<lt, [a, b]> extends true ? a : b;
 
 	export interface filterMap<f extends Fn> extends Fn {
 		return: filterMapImpl<f, this["arg"]>;

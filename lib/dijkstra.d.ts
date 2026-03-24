@@ -129,7 +129,6 @@ declare namespace NodeTable {
 	export type ofList = List.foldLeft<update, empty>;
 
 	export interface removeMin extends Fn<NodeTable> {
-		// @ts-ignore - infinite recursion, but still works if graph is small enough
 		return: List.min<
 			Node.ltFn,
 			Table.values<this["arg"]>
