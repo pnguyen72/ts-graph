@@ -55,7 +55,7 @@ type search<
 
 interface relax<unvisited extends NodeTable, current extends Node>
 	extends Fn<Edge> {
-	return: this["arg"] extends Edge.of<infer _, infer name, infer edgeLength>
+	return: this["arg"] extends Edge<infer _, infer name, infer edgeLength>
 		? NodeTable.get<name, unvisited> extends infer neighbor extends Node
 			? plus<current["dist"], edgeLength> extends infer newDist extends number
 				? lt<newDist, neighbor["dist"]> extends true
