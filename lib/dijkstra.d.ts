@@ -7,11 +7,11 @@ import type { Table } from "./helpers/table";
 export type shortestPath<
 	src extends string,
 	des extends string,
-	g extends Graph,
+	graph extends Graph,
 	srcNode extends Node = Node.of<src, 0>,
 	visited extends NodeTable = NodeTable.empty,
 	unvisited extends NodeTable = Fn.pipe<
-		g,
+		graph,
 		[
 			Graph.vertices,
 			List.map<Node.ofDist<inf>>,
@@ -20,38 +20,37 @@ export type shortestPath<
 		]
 	>,
 > =
-	Graph.mem<src, g> extends false
+	Graph.mem<src, graph> extends false
 		? `Vertex ${src} does not exist`
-		: Graph.mem<des, g> extends false
+		: Graph.mem<des, graph> extends false
 			? `Vertex ${des} does not exist`
 			: src extends des
 				? { path: src; dist: 0 }
-				: search<src, des, g, srcNode, visited, unvisited>;
+				: search<src, des, graph, srcNode, visited, unvisited>;
 
 type search<
 	src extends string,
 	des extends string,
-	g extends Graph,
+	graph extends Graph,
 	current extends Node,
 	visited extends NodeTable,
 	unvisited extends NodeTable,
-	newVisited extends NodeTable = Fn.call<NodeTable.update, [current, visited]>,
-	neighbors extends Node[] = Fn.pipe<
-		g,
+	newVisited extends NodeTable = NodeTable.add<current, visited>,
+> =
+	Fn.pipe<
+		graph,
 		[
 			Graph.neighbors<current["name"]>,
 			List.filterMap<updateNeighbor<current, unvisited>>,
+			List.foldLeft<NodeTable.update, unvisited>,
+			NodeTable.removeMin,
 		]
-	>,
-> =
-	NodeTable.removeMin<
-		List.foldRight<NodeTable.update, neighbors, unvisited>
 	> extends [infer next extends Node, infer newUnvisited extends NodeTable]
 		? Node.relaxed<next> extends false
-			? `Vertices ${src} and ${des} are not connected`
+			? `There's no path from ${src} to ${des}`
 			: next["name"] extends des
 				? Fn.call<Node.getPath, next>
-				: search<src, des, g, next, newVisited, newUnvisited>
+				: search<src, des, graph, next, newVisited, newUnvisited>
 		: Fn.pipe<newVisited, [NodeTable.get<des>, Node.getPath]>;
 
 interface updateNeighbor<current extends Node, unvisited extends NodeTable>
@@ -88,7 +87,7 @@ declare namespace Node {
 
 	type buildPath<node extends Node, acc extends string = ""> =
 		node extends of<infer name, infer _, infer prev>
-			? (acc extends "" ? name : `${name} - ${acc}`) extends infer acc extends
+			? (acc extends "" ? name : `${name} -> ${acc}`) extends infer acc extends
 					string
 				? prev extends Node
 					? buildPath<prev, acc>
@@ -107,12 +106,14 @@ type NodeTable = Table;
 declare namespace NodeTable {
 	export type empty = Table.empty;
 
-	export interface update extends Fn<[Node, NodeTable], NodeTable> {
-		return: Table.insert<
-			this["arg"][0]["name"],
-			this["arg"][0],
-			this["arg"][1]
-		>;
+	export type add<node extends Node, table extends NodeTable> = Table.insert<
+		node["name"],
+		node,
+		table
+	>;
+
+	export interface update extends Fn<[NodeTable, Node], NodeTable> {
+		return: add<this["arg"][1], this["arg"][0]>;
 	}
 
 	export interface remove<node extends Node> extends Fn<NodeTable, NodeTable> {
@@ -125,13 +126,15 @@ declare namespace NodeTable {
 			: unknown;
 	}
 
-	export interface ofList extends Fn<Node[], NodeTable> {
-		return: List.foldRight<update, this["arg"], Table.empty>;
-	}
+	export type ofList = List.foldLeft<update, empty>;
 
-	export type removeMin<table extends NodeTable> =
+	export interface removeMin extends Fn<NodeTable> {
 		// @ts-ignore - infinite recursion, but still works if graph is small enough
-		List.min<Node.ltFn, Table.values<table>> extends infer min extends Node
-			? [min, Fn.call<remove<min>, table>]
+		return: List.min<
+			Node.ltFn,
+			Table.values<this["arg"]>
+		> extends infer min extends Node
+			? [min, Fn.call<remove<min>, this["arg"]>]
 			: unknown;
+	}
 }
