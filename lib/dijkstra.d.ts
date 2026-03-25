@@ -21,7 +21,7 @@ type search<
 	src extends string,
 	des extends string,
 	graph extends Graph,
-	current extends Node = Node.of<src, 0>,
+	current extends Node = Node<src, 0>,
 	remaining extends NodeQueue = Fn.pipe<
 		graph,
 		[
@@ -55,23 +55,21 @@ interface relax<unvisited extends NodeQueue, current extends Node>
 		? NodeQueue.find<name, unvisited> extends infer neighbor extends Node
 			? plus<current["dist"], edgeLength> extends infer newDist extends number
 				? lt<newDist, neighbor["dist"]> extends true
-					? Node.of<name, newDist, current>
+					? Node<name, newDist, current>
 					: nil
 				: never
 			: nil
 		: never;
 }
 
-type Node = { name: string; dist: number; prev: Node | null };
+type Node<
+	name extends string = string,
+	dist extends number = number,
+	prev = unknown,
+> = { name: name; dist: dist; prev: prev };
 declare namespace Node {
-	export type of<
-		name extends string,
-		dist extends number,
-		prev extends Node | null = null,
-	> = { name: name; dist: dist; prev: prev };
-
-	export interface ofDist<dist extends number> extends Fn<string, Node> {
-		return: of<this["arg"], dist>;
+	export interface ofDist<dist extends number> extends Fn<string> {
+		return: Node<this["arg"], dist>;
 	}
 
 	export interface ltFn extends Fn<[Node, Node], boolean> {
@@ -83,7 +81,7 @@ declare namespace Node {
 		dist: node["dist"];
 	};
 	type buildPath<node extends Node, acc extends string = ""> =
-		node extends of<infer name, infer _, infer prev>
+		node extends Node<infer name, infer _, infer prev>
 			? (acc extends "" ? name : `${name} -> ${acc}`) extends infer acc extends
 					string
 				? prev extends Node
