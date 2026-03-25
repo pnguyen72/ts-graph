@@ -2,10 +2,13 @@ import type { Fn } from "./function.d.ts";
 import type { nil } from "./nil";
 
 export namespace List {
-	export interface foldLeft<f extends Fn<[unknown, unknown]>, acc> extends Fn {
+	export interface foldLeft<
+		f extends Fn<[unknown, unknown]>,
+		acc extends f["arg"][0],
+	> extends Fn {
 		return: foldLeftImpl<f, acc, this["arg"]>;
 	}
-	type foldLeftImpl<f extends Fn<[unknown, unknown]>, acc, l> = l extends [
+	type foldLeftImpl<f extends Fn, acc, l> = l extends [
 		infer head,
 		...infer tail,
 	]
