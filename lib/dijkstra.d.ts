@@ -11,14 +11,13 @@ export type shortestPath<
 	des extends string,
 	graph extends Graph,
 	srcNode extends Node = Node.of<src, 0>,
-	visited extends NodeTable = NodeTable.empty,
-	unvisited extends NodeTable = Fn.pipe<
+	otherNodes extends PriorityQueue = Fn.pipe<
 		graph,
 		[
 			Graph.vertices,
 			List.map<Node.ofDist<inf>>,
-			NodeTable.ofList,
-			NodeTable.remove<srcNode>,
+			PriorityQueue.ofList,
+			PriorityQueue.remove<srcNode>,
 		]
 	>,
 > =
@@ -28,39 +27,37 @@ export type shortestPath<
 			? `Vertex ${des} does not exist`
 			: src extends des
 				? { path: src; dist: 0 }
-				: search<src, des, graph, srcNode, visited, unvisited>;
+				: search<src, des, graph, srcNode, otherNodes>;
 
 type search<
 	src extends string,
 	des extends string,
 	graph extends Graph,
 	current extends Node,
-	visited extends NodeTable,
-	unvisited extends NodeTable,
-	nextVisited extends NodeTable = NodeTable.add<current, visited>,
+	unvisited extends PriorityQueue,
 > =
 	Fn.pipe<
 		graph,
 		[
 			Graph.neighbors<current["name"]>,
 			List.filterMap<relax<unvisited, current>>,
-			List.foldLeft<NodeTable.update, unvisited>,
-			NodeTable.removeMin,
+			List.foldLeft<PriorityQueue.update, unvisited>,
+			PriorityQueue.pop,
 		]
-	> extends [infer next extends Node, infer nextUnvisited extends NodeTable]
+	> extends [infer next extends Node, infer nextUnvisited extends PriorityQueue]
 		? Node.isRelaxed<next> extends false
 			? `There's no path from ${src} to ${des}`
 			: next["name"] extends des
 				? Node.resolve<next>
-				: search<src, des, graph, next, nextVisited, nextUnvisited>
+				: search<src, des, graph, next, nextUnvisited>
 		: /* Happens when unvisited is empty. 
 		 	But des should've been visited and resolved in an earlier step. */
 			never;
 
-interface relax<unvisited extends NodeTable, current extends Node>
+interface relax<unvisited extends PriorityQueue, current extends Node>
 	extends Fn<Edge, Node | nil> {
 	return: this["arg"] extends Edge<infer _, infer name, infer edgeLength>
-		? NodeTable.get<name, unvisited> extends infer neighbor extends Node
+		? PriorityQueue.find<name, unvisited> extends infer neighbor extends Node
 			? plus<current["dist"], edgeLength> extends infer newDist extends number
 				? lt<newDist, neighbor["dist"]> extends true
 					? Node.of<name, newDist, current>
@@ -105,30 +102,30 @@ declare namespace Node {
 			: never;
 }
 
-type NodeTable = Table;
-declare namespace NodeTable {
+type PriorityQueue = Table;
+declare namespace PriorityQueue {
 	export type empty = Table.empty;
 
-	export type add<node extends Node, table extends NodeTable> = Table.insert<
-		node["name"],
-		node,
-		table
-	>;
+	export type add<
+		node extends Node,
+		queue extends PriorityQueue,
+	> = Table.insert<node["name"], node, queue>;
 
-	export interface update extends Fn<[NodeTable, Node], NodeTable> {
+	export interface update extends Fn<[PriorityQueue, Node], PriorityQueue> {
 		return: add<this["arg"][1], this["arg"][0]>;
 	}
 
-	export interface remove<node extends Node> extends Fn<NodeTable, NodeTable> {
+	export interface remove<node extends Node>
+		extends Fn<PriorityQueue, PriorityQueue> {
 		return: Table.remove<node["name"], this["arg"]>;
 	}
 
-	export type get<name extends string, table extends NodeTable> =
-		Table.get<name, table> extends infer node extends Node ? node : nil;
+	export type find<name extends string, queue extends PriorityQueue> =
+		Table.get<name, queue> extends infer node extends Node ? node : nil;
 
 	export type ofList = List.foldLeft<update, empty>;
 
-	export interface removeMin extends Fn<NodeTable, [Node, NodeTable] | nil> {
+	export interface pop extends Fn<PriorityQueue, [Node, PriorityQueue] | nil> {
 		return: List.min<
 			Node.ltFn,
 			Table.values<this["arg"]>
