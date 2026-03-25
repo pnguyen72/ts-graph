@@ -8,6 +8,7 @@ type graph = Graph.of<
 		Edge<"A", "P", 162>,
 		Edge<"B", "D", 105>,
 		Edge<"B", "A", 66>,
+		Edge<"B", "Q", 84>,
 		Edge<"C", "D", 27>,
 		Edge<"C", "E", 48>,
 		Edge<"C", "B", 216>,

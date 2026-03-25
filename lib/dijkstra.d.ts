@@ -10,54 +10,49 @@ export type shortestPath<
 	src extends string,
 	des extends string,
 	graph extends Graph,
-	srcNode extends Node = Node.of<src, 0>,
-	otherNodes extends PriorityQueue = Fn.pipe<
-		graph,
-		[
-			Graph.vertices,
-			List.map<Node.ofDist<inf>>,
-			PriorityQueue.ofList,
-			PriorityQueue.remove<srcNode>,
-		]
-	>,
 > =
 	Graph.mem<src, graph> extends false
 		? `Vertex ${src} does not exist`
 		: Graph.mem<des, graph> extends false
 			? `Vertex ${des} does not exist`
-			: src extends des
-				? { path: src; dist: 0 }
-				: search<src, des, graph, srcNode, otherNodes>;
+			: search<src, des, graph>;
 
 type search<
 	src extends string,
 	des extends string,
 	graph extends Graph,
-	current extends Node,
-	unvisited extends PriorityQueue,
-> =
-	Fn.pipe<
+	current extends Node = Node.of<src, 0>,
+	remaining extends NodeQueue = Fn.pipe<
 		graph,
 		[
-			Graph.neighbors<current["name"]>,
-			List.filterMap<relax<unvisited, current>>,
-			List.foldLeft<PriorityQueue.update, unvisited>,
-			PriorityQueue.pop,
+			Graph.vertices,
+			List.map<Node.ofDist<inf>>,
+			NodeQueue.ofList,
+			NodeQueue.remove<current>,
 		]
-	> extends [infer next extends Node, infer nextUnvisited extends PriorityQueue]
-		? Node.isRelaxed<next> extends false
-			? `There's no path from ${src} to ${des}`
-			: next["name"] extends des
-				? Node.resolve<next>
-				: search<src, des, graph, next, nextUnvisited>
-		: /* Happens when unvisited is empty. 
-		 	But des should've been visited and resolved in an earlier step. */
+	>,
+> = des extends current["name"]
+	? Node.resolve<current>
+	: Fn.pipe<
+				graph,
+				[
+					Graph.neighbors<current["name"]>,
+					List.filterMap<relax<remaining, current>>,
+					List.foldLeft<NodeQueue.update, remaining>,
+					NodeQueue.popMin,
+				]
+			> extends [infer next extends Node, infer nextRemaining extends NodeQueue]
+		? next["dist"] extends inf
+			? `No path from ${src} to ${des}`
+			: search<src, des, graph, next, nextRemaining>
+		: /* Happens when all nodes have been visited.
+			But visiting des should've terminated the loop already. */
 			never;
 
-interface relax<unvisited extends PriorityQueue, current extends Node>
+interface relax<unvisited extends NodeQueue, current extends Node>
 	extends Fn<Edge, Node | nil> {
 	return: this["arg"] extends Edge<infer _, infer name, infer edgeLength>
-		? PriorityQueue.find<name, unvisited> extends infer neighbor extends Node
+		? NodeQueue.find<name, unvisited> extends infer neighbor extends Node
 			? plus<current["dist"], edgeLength> extends infer newDist extends number
 				? lt<newDist, neighbor["dist"]> extends true
 					? Node.of<name, newDist, current>
@@ -83,10 +78,6 @@ declare namespace Node {
 		return: lt<this["arg"][0]["dist"], this["arg"][1]["dist"]>;
 	}
 
-	export type isRelaxed<node extends Node> = node["dist"] extends inf
-		? false
-		: true;
-
 	export type resolve<node extends Node> = {
 		path: buildPath<node>;
 		dist: node["dist"];
@@ -102,30 +93,30 @@ declare namespace Node {
 			: never;
 }
 
-type PriorityQueue = Table;
-declare namespace PriorityQueue {
+type NodeQueue = Table;
+declare namespace NodeQueue {
 	export type empty = Table.empty;
 
-	export type add<
-		node extends Node,
-		queue extends PriorityQueue,
-	> = Table.insert<node["name"], node, queue>;
+	export type add<node extends Node, queue extends NodeQueue> = Table.insert<
+		node["name"],
+		node,
+		queue
+	>;
 
-	export interface update extends Fn<[PriorityQueue, Node], PriorityQueue> {
+	export interface update extends Fn<[NodeQueue, Node], NodeQueue> {
 		return: add<this["arg"][1], this["arg"][0]>;
 	}
 
-	export interface remove<node extends Node>
-		extends Fn<PriorityQueue, PriorityQueue> {
+	export interface remove<node extends Node> extends Fn<NodeQueue, NodeQueue> {
 		return: Table.remove<node["name"], this["arg"]>;
 	}
 
-	export type find<name extends string, queue extends PriorityQueue> =
+	export type find<name extends string, queue extends NodeQueue> =
 		Table.get<name, queue> extends infer node extends Node ? node : nil;
 
 	export type ofList = List.foldLeft<update, empty>;
 
-	export interface pop extends Fn<PriorityQueue, [Node, PriorityQueue] | nil> {
+	export interface popMin extends Fn<NodeQueue, [Node, NodeQueue] | nil> {
 		return: List.min<
 			Node.ltFn,
 			Table.values<this["arg"]>

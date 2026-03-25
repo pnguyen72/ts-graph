@@ -28,15 +28,11 @@ export namespace Graph {
 		: graph;
 
 	export interface vertices extends Fn<Graph, string[]> {
-		return: Table.keys<this["arg"]> extends infer names extends string[]
-			? names
-			: [];
+		return: Table.keys<this["arg"]>;
 	}
 
 	export interface neighbors<v extends string> extends Fn<Graph, Edge[] | nil> {
-		return: Table.get<v, this["arg"]> extends infer edges extends Edge[]
-			? edges
-			: nil;
+		return: Table.get<v, this["arg"]>;
 	}
 
 	export type mem<v extends string, graph extends Graph> = Table.mem<v, graph>;
