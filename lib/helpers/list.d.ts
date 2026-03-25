@@ -1,10 +1,10 @@
 import type { Fn } from "./function.d.ts";
+import type { nil } from "./nil";
 
 export namespace List {
 	export interface foldLeft<f extends Fn<[unknown, unknown]>, acc> extends Fn {
 		return: foldLeftImpl<f, acc, this["arg"]>;
 	}
-
 	type foldLeftImpl<f extends Fn<[unknown, unknown]>, acc, l> = l extends [
 		infer head,
 		...infer tail,
@@ -16,7 +16,7 @@ export namespace List {
 		? only
 		: l extends [infer first, infer second, ...infer rest]
 			? min<lt, [takeMin<lt, first, second>, ...rest]>
-			: unknown;
+			: nil;
 	type takeMin<lt extends Fn, a, b> = Fn.call<lt, [a, b]> extends true ? a : b;
 
 	export interface filterMap<f extends Fn> extends Fn {
@@ -24,7 +24,7 @@ export namespace List {
 	}
 	type filterMapImpl<f extends Fn, l> = l extends [infer head, ...infer tail]
 		? Fn.call<f, head> extends infer fHead
-			? unknown extends fHead
+			? fHead extends nil
 				? filterMapImpl<f, tail>
 				: [fHead, ...filterMapImpl<f, tail>]
 			: never

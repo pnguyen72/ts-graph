@@ -1,6 +1,6 @@
-export interface Fn<arg = unknown, ret = unknown> {
-	arg: arg;
-	return: ret;
+export interface Fn<Arg = unknown, Return = unknown> {
+	arg: Arg;
+	return: Return;
 }
 
 export namespace Fn {

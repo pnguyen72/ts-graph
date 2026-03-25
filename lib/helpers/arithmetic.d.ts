@@ -1,3 +1,5 @@
+import type { nil } from "./nil";
+
 type tupleOf<
 	length extends number,
 	acc extends unknown[] = [],
@@ -9,7 +11,7 @@ export type inf = 999;
 export type minus<a extends number, b extends number> =
 	tupleOf<a> extends [...tupleOf<b>, ...infer remaining]
 		? remaining["length"]
-		: unknown;
+		: nil;
 
 export type plus<a extends number, b extends number> = [
 	...tupleOf<a>,

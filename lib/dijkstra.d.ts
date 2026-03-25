@@ -1,7 +1,9 @@
 import type { Edge, Graph } from "./graph";
 import type { inf, lt, plus } from "./helpers/arithmetic";
+
 import type { Fn } from "./helpers/function";
 import type { List } from "./helpers/list";
+import type { nil } from "./helpers/nil";
 import type { Table } from "./helpers/table";
 
 export type shortestPath<
@@ -51,7 +53,9 @@ type search<
 			: next["name"] extends des
 				? Node.resolve<next>
 				: search<src, des, graph, next, nextVisited, nextUnvisited>
-		: unknown; // should be unreachable
+		: /* Happens when unvisited is empty. 
+		 	But des should've been visited and resolved in an earlier step. */
+			"should be unreachable";
 
 interface relax<unvisited extends NodeTable, current extends Node>
 	extends Fn<Edge> {
@@ -60,9 +64,9 @@ interface relax<unvisited extends NodeTable, current extends Node>
 			? plus<current["dist"], edgeLength> extends infer newDist extends number
 				? lt<newDist, neighbor["dist"]> extends true
 					? Node.of<name, newDist, current>
-					: unknown
+					: nil
 				: never
-			: unknown
+			: nil
 		: never;
 }
 
@@ -74,7 +78,7 @@ declare namespace Node {
 		prev extends Node | null = null,
 	> = { name: name; dist: dist; prev: prev };
 
-	export interface ofDist<dist extends number> extends Fn<string, Node> {
+	export interface ofDist<dist extends number> extends Fn<string> {
 		return: of<this["arg"], dist>;
 	}
 
@@ -111,16 +115,16 @@ declare namespace NodeTable {
 		table
 	>;
 
-	export interface update extends Fn<[NodeTable, Node], NodeTable> {
+	export interface update extends Fn<[NodeTable, Node]> {
 		return: add<this["arg"][1], this["arg"][0]>;
 	}
 
-	export interface remove<node extends Node> extends Fn<NodeTable, NodeTable> {
+	export interface remove<node extends Node> extends Fn<NodeTable> {
 		return: Table.remove<node["name"], this["arg"]>;
 	}
 
 	export type get<name extends string, table extends NodeTable> =
-		Table.get<name, table> extends infer node extends Node ? node : unknown;
+		Table.get<name, table> extends infer node extends Node ? node : nil;
 
 	export type ofList = List.foldLeft<update, empty>;
 
@@ -130,6 +134,6 @@ declare namespace NodeTable {
 			Table.values<this["arg"]>
 		> extends infer min extends Node
 			? [min, Fn.call<remove<min>, this["arg"]>]
-			: unknown;
+			: nil;
 	}
 }

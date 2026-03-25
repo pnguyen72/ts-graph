@@ -1,4 +1,5 @@
 import type { Fn } from "./helpers/function";
+import type { nil } from "./helpers/nil";
 import type { Table } from "./helpers/table";
 
 export type Edge<
@@ -32,11 +33,10 @@ export namespace Graph {
 			: [];
 	}
 
-	export interface neighbors<v extends string>
-		extends Fn<Graph, Edge[] | unknown> {
+	export interface neighbors<v extends string> extends Fn<Graph, Edge[] | nil> {
 		return: Table.get<v, this["arg"]> extends infer edges extends Edge[]
 			? edges
-			: unknown;
+			: nil;
 	}
 
 	export type mem<v extends string, graph extends Graph> = Table.mem<v, graph>;
