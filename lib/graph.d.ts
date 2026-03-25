@@ -12,7 +12,7 @@ export type Graph = Table;
 export namespace Graph {
 	type addEdge<e extends Edge, graph extends Graph> = (
 		Fn.call<neighbors<e["src"]>, graph> extends infer edges extends Edge[]
-			? Table.insert<e["src"], [...edges, e], graph>
+			? Table.update<e["src"], [...edges, e], graph>
 			: Table.insert<e["src"], [e], graph>
 	) extends infer graph extends Graph
 		? mem<e["des"], graph> extends false

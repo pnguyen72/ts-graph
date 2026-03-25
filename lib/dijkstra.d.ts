@@ -95,16 +95,14 @@ declare namespace Node {
 
 type NodeQueue = Table;
 declare namespace NodeQueue {
-	export type empty = Table.empty;
-
-	export type add<node extends Node, queue extends NodeQueue> = Table.insert<
-		node["name"],
-		node,
-		queue
-	>;
+	export type ofList = List.foldLeft<update, Table.empty>;
 
 	export interface update extends Fn<[NodeQueue, Node], NodeQueue> {
-		return: add<this["arg"][1], this["arg"][0]>;
+		return: Table.update<
+			this["arg"][1]["name"],
+			this["arg"][1],
+			this["arg"][0]
+		>;
 	}
 
 	export interface remove<node extends Node> extends Fn<NodeQueue, NodeQueue> {
@@ -113,8 +111,6 @@ declare namespace NodeQueue {
 
 	export type find<name extends string, queue extends NodeQueue> =
 		Table.get<name, queue> extends infer node extends Node ? node : nil;
-
-	export type ofList = List.foldLeft<update, empty>;
 
 	export interface popMin extends Fn<NodeQueue, [Node, NodeQueue] | nil> {
 		return: List.min<
