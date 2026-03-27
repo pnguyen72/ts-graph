@@ -1,4 +1,5 @@
 import type { Fn } from "./helpers/function";
+import type { List } from "./helpers/list.d.ts";
 import type { nil } from "./helpers/nil";
 import type { Table } from "./helpers/table";
 
@@ -7,33 +8,55 @@ export type Edge<
 	des extends string = string,
 	len extends number = number,
 > = { src: src; des: des; len: len };
+declare namespace Edge {
+	export interface des extends Fn<Edge, string> {
+		return: this["arg"]["des"];
+	}
+}
 
 export type Graph = Table;
 export namespace Graph {
-	type addEdge<e extends Edge, graph extends Graph> = (
-		Fn.call<neighbors<e["src"]>, graph> extends infer edges extends Edge[]
-			? Table.update<e["src"], [...edges, e], graph>
-			: Table.insert<e["src"], [e], graph>
-	) extends infer graph extends Graph
-		? mem<e["des"], graph> extends false
-			? Table.insert<e["des"], [], graph>
-			: graph
-		: never;
-
 	export type of<
 		edges extends Edge[],
-		graph extends Graph = Table.empty,
+		acc extends Graph = Table.empty,
 	> = edges extends [infer head extends Edge, ...infer tail extends Edge[]]
-		? of<tail, addEdge<head, graph>>
-		: graph;
+		? of<tail, addEdge<head, acc>>
+		: acc;
 
-	export interface vertices extends Fn<Graph, string[]> {
-		return: Table.keys<this["arg"]>;
-	}
+	export type vertices<g extends Graph> =
+		Table.keys<g> extends infer vs extends string[] ? vs : never;
 
-	export interface neighbors<v extends string> extends Fn<Graph, Edge[] | nil> {
-		return: Table.get<v, this["arg"]>;
-	}
+	export type transpose<
+		g extends Graph,
+		edges extends Edge[] = Table.values<g> extends infer edgeLists extends
+			Edge[][]
+			? List.flatten<edgeLists>
+			: never,
+		acc extends Graph = Table.empty,
+	> = edges extends [
+		Edge<infer src, infer des, infer len>,
+		...infer otherEdges extends Edge[],
+	]
+		? transpose<g, otherEdges, addEdge<Edge<des, src, len>, acc>>
+		: acc;
 
-	export type mem<v extends string, graph extends Graph> = Table.mem<v, graph>;
+	export type edges<v extends string, g extends Graph> =
+		Table.get<v, g> extends infer es extends Edge[] ? es : nil;
+
+	export type neighbors<v extends string, g extends Graph> = List.map<
+		Edge.des,
+		edges<v, g>
+	>;
+
+	export type mem<v extends string, g extends Graph> = Table.mem<v, g>;
 }
+
+type addEdge<e extends Edge, g extends Graph> = (
+	Graph.edges<e["src"], g> extends infer edges extends Edge[]
+		? Table.update<e["src"], [...edges, e], g>
+		: Table.insert<e["src"], [e], g>
+) extends infer g extends Graph
+	? Graph.mem<e["des"], g> extends false
+		? Table.insert<e["des"], [], g>
+		: g
+	: never;

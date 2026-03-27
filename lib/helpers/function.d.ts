@@ -5,7 +5,7 @@ export interface Fn<Arg = unknown, Return = unknown> {
 }
 
 export namespace Fn {
-	export type call<f extends Fn, arg> = unknown extends f["_returnType"]
+	export type call<f extends Fn, arg extends f["arg"]> = unknown extends f["_returnType"]
 		? (f & { arg: arg })["return"]
 		: (f & { arg: arg })["return"] extends infer res extends f["_returnType"]
 			? res

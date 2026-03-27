@@ -1,5 +1,5 @@
-import type { List } from "./list.d.ts";
 import type { nil } from "./nil";
+import type { toList } from "./union";
 
 export type Table = object;
 export namespace Table {
@@ -24,7 +24,7 @@ export namespace Table {
 		? true
 		: false;
 
-	export type keys<t extends Table> = List.ofUnion<keyof t>;
+	export type keys<t extends Table> = toList<keyof t>;
 
-	export type values<t extends Table> = List.ofUnion<t[keyof t]>;
+	export type values<t extends Table> = toList<t[keyof t]>;
 }

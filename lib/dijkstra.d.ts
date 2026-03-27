@@ -9,34 +9,28 @@ import type { Table } from "./helpers/table";
 export type shortestPath<
 	src extends string,
 	des extends string,
-	graph extends Graph,
+	g extends Graph,
 > =
-	Graph.mem<src, graph> extends false
+	Graph.mem<src, g> extends false
 		? `Vertex ${src} does not exist`
-		: Graph.mem<des, graph> extends false
+		: Graph.mem<des, g> extends false
 			? `Vertex ${des} does not exist`
-			: search<src, des, graph>;
+			: search<src, des, g>;
 
 type search<
 	src extends string,
 	des extends string,
-	graph extends Graph,
+	g extends Graph,
 	current extends Node = Node<src, 0>,
 	remaining extends NodeQueue = Fn.pipe<
-		graph,
-		[
-			Graph.vertices,
-			List.map<Node.ofDist<inf>>,
-			NodeQueue.ofList,
-			NodeQueue.remove<current>,
-		]
+		Graph.vertices<g>,
+		[List.map<Node.ofDist<inf>>, NodeQueue.ofList, NodeQueue.remove<current>]
 	>,
 > = des extends current["name"]
 	? Node.resolve<current>
 	: Fn.pipe<
-				graph,
+				Graph.edges<current["name"], g>,
 				[
-					Graph.neighbors<current["name"]>,
 					List.filterMap<relax<remaining, current>>,
 					List.foldLeft<NodeQueue.update, remaining>,
 					NodeQueue.popMin,
@@ -44,7 +38,7 @@ type search<
 			> extends [infer next extends Node, infer nextRemaining extends NodeQueue]
 		? next["dist"] extends inf
 			? `No path from ${src} to ${des}`
-			: search<src, des, graph, next, nextRemaining>
+			: search<src, des, g, next, nextRemaining>
 		: /* Happens when all nodes have been visited.
 			But visiting des should've terminated the loop already. */
 			never;

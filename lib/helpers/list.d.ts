@@ -2,18 +2,11 @@ import type { Fn } from "./function.d.ts";
 import type { nil } from "./nil";
 
 export namespace List {
-	export interface foldLeft<
+	export type foldLeft<
 		f extends Fn<[unknown, unknown]>,
 		acc extends f["arg"][0],
-	> extends Fn {
-		return: foldLeftImpl<f, acc, this["arg"]>;
-	}
-	type foldLeftImpl<f extends Fn, acc, l> = l extends [
-		infer head,
-		...infer tail,
-	]
-		? foldLeftImpl<f, Fn.call<f, [acc, head]>, tail>
-		: acc;
+		l = "curry",
+	> = l extends "curry" ? foldLeftFn<f, acc> : foldLeftImpl<f, acc, l>;
 
 	export type min<
 		lt extends Fn<[unknown, unknown], boolean>,
@@ -23,37 +16,52 @@ export namespace List {
 		: l extends [infer first, infer second, ...infer rest]
 			? min<lt, [takeMin<lt, first, second>, ...rest]>
 			: nil;
-	type takeMin<lt extends Fn<[unknown, unknown], boolean>, a, b> =
-		Fn.call<lt, [a, b]> extends true ? a : b;
 
 	export interface filterMap<f extends Fn> extends Fn {
 		return: filterMapImpl<f, this["arg"]>;
 	}
-	type filterMapImpl<f extends Fn, l> = l extends [infer head, ...infer tail]
-		? Fn.call<f, head> extends infer fHead
-			? fHead extends nil
-				? filterMapImpl<f, tail>
-				: [fHead, ...filterMapImpl<f, tail>]
-			: never
-		: [];
 
-	export interface map<f extends Fn> extends Fn<unknown[]> {
-		return: mapImpl<f, this["arg"]>;
-	}
-	type mapImpl<f extends Fn, l extends unknown[]> = l extends [
-		infer head,
-		...infer tail,
+	export type map<f extends Fn, l = "curry"> = l extends "curry"
+		? mapFn<f>
+		: mapImpl<f, l>;
+
+	export type flatten<ls extends unknown[][]> = ls extends [
+		infer head extends unknown[],
+		...infer tail extends unknown[][],
 	]
-		? [Fn.call<f, head>, ...mapImpl<f, tail>]
+		? [...head, ...flatten<tail>]
 		: [];
 
-	// https://github.com/hackle/blog-rust/blob/master/sample/typescript-union-to-tuple-lay.ts
-	export type ofUnion<u> = [u] extends [never]
-		? []
-		: pickOne<u> extends infer last
-			? [...ofUnion<Exclude<u, last>>, last]
-			: never;
-	type pickOne<T> = inferContra<inferContra<contra<contra<T>>>>;
-	type contra<T> = T extends T ? (arg: T) => void : never;
-	type inferContra<T> = [T] extends [(arg: infer I) => void] ? I : never;
+	export type reverse<l, acc extends unknown[] = []> = l extends [
+		infer head,
+		...infer tail extends unknown[],
+	]
+		? reverse<tail, [head, ...acc]>
+		: acc;
+}
+
+type foldLeftImpl<f extends Fn, acc, l> = l extends [infer head, ...infer tail]
+	? foldLeftImpl<f, Fn.call<f, [acc, head]>, tail>
+	: acc;
+interface foldLeftFn<f extends Fn<[unknown, unknown]>, acc extends f["arg"][0]>
+	extends Fn {
+	return: foldLeftImpl<f, acc, this["arg"]>;
+}
+
+type takeMin<lt extends Fn<[unknown, unknown], boolean>, a, b> =
+	Fn.call<lt, [a, b]> extends true ? a : b;
+
+type filterMapImpl<f extends Fn, l> = l extends [infer head, ...infer tail]
+	? Fn.call<f, head> extends infer fHead
+		? fHead extends nil
+			? filterMapImpl<f, tail>
+			: [fHead, ...filterMapImpl<f, tail>]
+		: never
+	: [];
+
+type mapImpl<f extends Fn, l> = l extends [infer head, ...infer tail]
+	? [Fn.call<f, head>, ...mapImpl<f, tail>]
+	: [];
+interface mapFn<f extends Fn> extends Fn {
+	return: mapImpl<f, this["arg"]>;
 }
